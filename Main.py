@@ -8,6 +8,9 @@ from pymongo import MongoClient
 client = MongoClient('localhost', 27017)
 WAIT_TIME = 2
 LOADING_MESSAGE = "Loading"
+file = open("address.text", "r")
+ADRESS = file.readline()
+
 
 
 class Part:
@@ -38,8 +41,7 @@ def GenerateParts():
     return Parts
 
 
-file = open("address.text", "r")
-ADDRESS = file.readline()
+
 Parts = GenerateParts()
 for part in Parts:
     print(part)
