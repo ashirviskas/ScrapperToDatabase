@@ -7,7 +7,6 @@ import os
 from pymongo import MongoClient
 client = MongoClient('localhost', 27017)
 WAIT_TIME = 2
-ADRESS = "http://46.101.173.126:5000/"
 LOADING_MESSAGE = "Loading"
 
 
@@ -19,7 +18,7 @@ class Part:
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested, " ago")
 def GetJsonFromRequest(request_type):
-    #request = requests.get("http://46.101.173.126:5000/"+request_type)
+    #request = requests.get("ADRESS"+request_type)
     #request_id = json.loads(request.content).get("result")
     #print(request_id)
     request_id = "09fa0f3c-acc2-436d-8f7b-31ebd05c17c7"
@@ -39,10 +38,8 @@ def GenerateParts():
     return Parts
 
 
-#r = requests.get("http://46.101.173.126:5000/cpu/c7b219df-6919-4747-8ef3-6623b77c4870")
-#data = json.loads(r.content)
-#print(data[1])
-
+file = open("address.text", "r")
+ADDRESS = file.readline()
 Parts = GenerateParts()
 for part in Parts:
     print(part)
