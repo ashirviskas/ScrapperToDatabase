@@ -40,8 +40,6 @@ def GenerateParts():
         Parts.append(str(data['endpoints'][endpoint]))
     return Parts
 
-
-
 Parts = GenerateParts()
 for part in Parts:
     print(part)
