@@ -1,6 +1,11 @@
 import json
 import time
 import requests
+import pymongo
+import os
+
+from pymongo import MongoClient
+client = MongoClient('localhost', 27017)
 WAIT_TIME = 2
 ADRESS = "http://46.101.173.126:5000/"
 LOADING_MESSAGE = "Loading"
@@ -37,6 +42,9 @@ def GenerateParts():
 #r = requests.get("http://46.101.173.126:5000/cpu/c7b219df-6919-4747-8ef3-6623b77c4870")
 #data = json.loads(r.content)
 #print(data[1])
+
 Parts = GenerateParts()
 for part in Parts:
     print(part)
+client = MongoClient('localhost', 27017)
+db = client.project
