@@ -5,6 +5,7 @@ import os
 import datetime
 import pprint
 import pymongo
+from datetime import timedelta
 from pymongo import MongoClient
 
 
@@ -27,7 +28,20 @@ class Part:
         return str(self.name, " Last requested: ", self.last_requested)
 
     def LoadToDatabase(self, data):
-        self.collection.data.insert(data, check_keys=False)
+        result_del = ""
+        result_ins = ""
+        if data is not []:
+            result_del = self.collection.data.delete_many({})
+            result_ins = self.collection.data.insert(data, check_keys=False)
+        print("deleted: ", result_del.deleted_count)
+        print("inserted: ", len(result_ins))
+        self.collection.log.insert_one({"date": datetime.datetime.utcnow(),
+                                        "deleted":result_del.deleted_count,
+                                        "inserted":len(result_ins)})
+    def LastUpdated(self):
+        stuffs = self.collection.log.find({}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
+        for stuff in stuffs:
+            return stuff
 
 def GetJsonFromRequest(request_type):
     request = requests.get("ADDRESS"+request_type) #gets request id from the server
@@ -57,19 +71,28 @@ def GeneratePartsDefault():
     Parts['dvd'] = Part('dvd', client.dvd)
     return Parts
 
-def UpdateDatabase(parts, forced):
-    twelve_hours = 864000   #12 hours in seconds
-    for part in parts:
-        if time.time() - part.last_requested > twelve_hours:
-            print()
-            
+def UpdateDatabase(parts, forced = False, sleeptime = 60*60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
+    twelve_hours = timedelta(hours = 12)   #12 hours in seconds
+    for key in parts:
+        if parts[key].LastUpdated() is not None:
+            if datetime.time - parts[key].LastUpdated() > twelve_hours or forced:
+                parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
+                time.sleep(sleeptime) #updates different parts every hour
+        else:
+            parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
+            time.sleep(sleeptime)  # updates different p
+
+
 def UpdatePart(partname):
     global Parts
     part = Parts[partname]
     data = GetJsonFromRequest(partname)
     part.LoadToDatabase(data)
 
-
+def EternalUpdating():
+    global Parts
+    while True:
+        UpdateDatabase(Parts)
 
 #def SendJsonToDatabase(json_data, database, ):
 def Initialize():
@@ -77,11 +100,18 @@ def Initialize():
     Parts = GeneratePartsDefault()
 
 Initialize()
+EternalUpdating()
+
+
+
 ### TESTING FOLLOWS: ###
 file = open("data_dvd_testing", "r", encoding="utf8") #
 json_data = json.loads(file.read())
 Parts['dvd'].LoadToDatabase(json_data)
-pprint.pprint(client.dvd.data.find_one({"contents":"5"}))
+pprint.pprint(Parts['dvd'].LastUpdated())
+"""for dvd in client.dvd.data.find():
+    pprint.pprint(dvd)"""
+pprint.pprint(client.dvd.data.find({"contents":"5"}))
 """test_obj = {"sky_id": "1254",
             "part_name": "A decent cpu",
             "hardware_stuffs": ["LGA1151", "test"],
