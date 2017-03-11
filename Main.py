@@ -31,15 +31,16 @@ class Part:
         result_del = ""
         result_ins = ""
         if data is not []:
-            result_del = self.collection.data.delete_many({})
-            result_ins = self.collection.data.insert(data, check_keys=False)
+            result_del = self.collection.delete_many({})
+            result_ins = self.collection.insert(data, check_keys=False)
         print("deleted: ", result_del.deleted_count)
         print("inserted: ", len(result_ins))
-        self.collection.log.insert_one({"date": datetime.datetime.utcnow(),
-                                        "deleted":result_del.deleted_count,
-                                        "inserted":len(result_ins)})
+        self.collection.insert_one({"name": self.name,
+                                    "date": datetime.datetime.utcnow(),
+                                    "deleted": result_del.deleted_count,
+                                    "inserted": len(result_ins)})
     def LastUpdated(self):
-        stuffs = self.collection.log.find({}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
+        stuffs = self.collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
 
@@ -59,17 +60,17 @@ def GetJsonFromRequest(request_type):
 def GeneratePartsDefault():
     global client
     Parts = {}
-    Parts['cpu'] = Part('cpu', client.cpu)
+    Parts['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
     Parts['motherboard'] = Part('motherboard', client.motherboard)
     Parts['cooler'] = Part('cooler', client.cooler)
     Parts['casecooler'] = Part('casecooler', client.casecooler)
-    Parts['ram'] = Part('ram', client.ram)
-    Parts['hdd'] = Part('hdd', client.hdd)
-    Parts['sdd'] = Part('sdd', client.ssd)
-    Parts['gpu'] = Part('gpu', client.gpu)
-    Parts['case'] = Part('case', client.case)
-    Parts['psu'] = Part('psu', client.psu)
-    Parts['dvd'] = Part('dvd', client.dvd)
+    Parts['ram'] = Part('ram', client.Scrapper_Project.ram)
+    Parts['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
+    Parts['sdd'] = Part('sdd', client.Scrapper_Project.ssd)
+    Parts['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
+    Parts['case'] = Part('case', client.Scrapper_Project.case)
+    Parts['psu'] = Part('psu', client.Scrapper_Project.psu)
+    Parts['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
     return Parts
 
 def UpdateDatabase(parts, forced = False, sleeptime = 60*60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
@@ -122,7 +123,7 @@ EternalUpdating()
 # time.sleep(10)
 # print("updating psu")
 # UpdatePart("psu")
-# print("FINISHED")
+print("FINISHED")
 
 
 
