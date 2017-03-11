@@ -11,7 +11,7 @@ from pymongo import MongoClient
 
 client = MongoClient('localhost', 27017)
 WAIT_TIME = 2 #time to wait for the worker on scrapper server to finish
-LOADING_MESSAGE = "Loading"
+LOADING_MESSAGE = '"Loading"\n'
 file = open("address.txt", "r")
 ADDRESS = file.readline()
 print(ADDRESS)
@@ -44,11 +44,12 @@ class Part:
             return stuff
 
 def GetJsonFromRequest(request_type):
-    request = requests.get("ADDRESS"+request_type) #gets request id from the server
+    global ADDRESS
+    request = requests.get(ADDRESS+request_type) #gets request id from the server
     request_id = json.loads(request.content).get("result")
     #print(request_id)
     request = requests.get(ADDRESS + request_type +"/"+request_id)
-    while request.content == LOADING_MESSAGE:
+    while request.text == LOADING_MESSAGE:
         time.sleep(WAIT_TIME)
         request = requests.get(ADDRESS + request_type + "/" + request_id)
     data = json.loads(request.content)
@@ -75,12 +76,15 @@ def UpdateDatabase(parts, forced = False, sleeptime = 60*60): # parts dictionary
     twelve_hours = timedelta(hours = 12)   #12 hours in seconds
     for key in parts:
         if parts[key].LastUpdated() is not None:
-            if datetime.time - parts[key].LastUpdated() > twelve_hours or forced:
-                parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
+            if datetime.time() - parts[key].LastUpdated() > twelve_hours or forced:
+                UpdatePart(key)
+                #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
                 time.sleep(sleeptime) #updates different parts every hour
         else:
-            parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
-            time.sleep(sleeptime)  # updates different p
+            UpdatePart(key)
+            #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
+            if not forced:
+                time.sleep(sleeptime)  # updates different p
 
 
 def UpdatePart(partname):
@@ -100,18 +104,19 @@ def Initialize():
     Parts = GeneratePartsDefault()
 
 Initialize()
-EternalUpdating()
+UpdateDatabase(Parts, True)
+#EternalUpdating()
 
 
 
 ### TESTING FOLLOWS: ###
-file = open("data_dvd_testing", "r", encoding="utf8") #
-json_data = json.loads(file.read())
-Parts['dvd'].LoadToDatabase(json_data)
-pprint.pprint(Parts['dvd'].LastUpdated())
-"""for dvd in client.dvd.data.find():
-    pprint.pprint(dvd)"""
-pprint.pprint(client.dvd.data.find({"contents":"5"}))
+# file = open("data_dvd_testing", "r", encoding="utf8") #
+# json_data = json.loads(file.read())
+# Parts['dvd'].LoadToDatabase(json_data)
+# pprint.pprint(Parts['dvd'].LastUpdated())
+# """for dvd in client.dvd.data.find():
+#     pprint.pprint(dvd)"""
+# pprint.pprint(client.dvd.data.find({"contents":"5"}))
 """test_obj = {"sky_id": "1254",
             "part_name": "A decent cpu",
             "hardware_stuffs": ["LGA1151", "test"],
