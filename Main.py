@@ -17,6 +17,7 @@ ADDRESS = file.readline()
 print(ADDRESS)
 Parts = {}
 
+
 class Part:
     def __init__(self, name, collection, was_requested = False, last_requested = time.time()):
         self.last_requested = last_requested
@@ -73,8 +74,8 @@ def GeneratePartsDefault():
     Parts['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
     return Parts
 
-def UpdateDatabase(parts, forced = False, sleeptime = 60*60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
-    twelve_hours = timedelta(hours = 12)   #12 hours in seconds
+def UpdateDatabase(parts, forced = False, every_few_hours = 12, sleeptime = 60*60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
+    twelve_hours = timedelta(hours = every_few_hours)   #12 hours in seconds
     for key in parts:
         if parts[key].LastUpdated() is not None:
             if datetime.time() - parts[key].LastUpdated() > twelve_hours or forced:
@@ -94,10 +95,10 @@ def UpdatePart(partname):
     data = GetJsonFromRequest(partname)
     part.LoadToDatabase(data)
 
-def EternalUpdating():
+def EternalUpdating(every_few_hours = 12, sleeptime_seconds = 60*60):
     global Parts
     while True:
-        UpdateDatabase(Parts)
+        UpdateDatabase(Parts, False, every_few_hours, sleeptime_seconds)
 
 #def SendJsonToDatabase(json_data, database, ):
 def Initialize():
