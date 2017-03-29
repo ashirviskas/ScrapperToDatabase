@@ -17,7 +17,6 @@ ADDRESS = file.readline()
 print(ADDRESS)
 Parts = {}
 
-
 class Part:
     def __init__(self, name, collection, was_requested = False, last_requested = time.time()):
         self.last_requested = last_requested
@@ -28,7 +27,7 @@ class Part:
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested)
 
-    def LoadToDatabase(self, data):
+    def load_to_database(self, data):
         result_del = ""
         result_ins = ""
         if data is not []:
@@ -40,12 +39,16 @@ class Part:
                                     "date": datetime.datetime.utcnow(),
                                     "deleted": result_del.deleted_count,
                                     "inserted": len(result_ins)})
-    def LastUpdated(self):
+    def last_updated(self):
         stuffs = self.collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
 
-def GetJsonFromRequest(request_type):
+class PartType:
+    def __init__(self, partname, dictionary, values_needed):
+
+
+def get_json_from_request(request_type):
     global ADDRESS
     request = requests.get(ADDRESS+request_type) #gets request id from the server
     request_id = json.loads(request.content).get("result")
@@ -58,72 +61,72 @@ def GetJsonFromRequest(request_type):
     return data
 
 
-def GeneratePartsDefault():
+def generate_parts_default():
     global client
-    Parts = {}
-    Parts['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
-    Parts['motherboard'] = Part('motherboard', client.motherboard)
-    Parts['cooler'] = Part('cooler', client.cooler)
-    Parts['casecooler'] = Part('casecooler', client.casecooler)
-    Parts['ram'] = Part('ram', client.Scrapper_Project.ram)
-    Parts['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
-    Parts['sdd'] = Part('sdd', client.Scrapper_Project.ssd)
-    Parts['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
-    Parts['case'] = Part('case', client.Scrapper_Project.case)
-    Parts['psu'] = Part('psu', client.Scrapper_Project.psu)
-    Parts['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
-    return Parts
+    parts = {}
+    parts['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
+    parts['motherboard'] = Part('motherboard', client.motherboard)
+    parts['cooler'] = Part('cooler', client.cooler)
+    parts['casecooler'] = Part('casecooler', client.casecooler)
+    parts['ram'] = Part('ram', client.Scrapper_Project.ram)
+    parts['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
+    parts['sdd'] = Part('sdd', client.Scrapper_Project.ssd)
+    parts['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
+    parts['case'] = Part('case', client.Scrapper_Project.case)
+    parts['psu'] = Part('psu', client.Scrapper_Project.psu)
+    parts['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
+    return parts
 
-def UpdateDatabase(parts, forced = False, every_few_hours = 12, sleeptime = 60*60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
+def update_database(parts, forced = False, every_few_hours = 12, sleeptime =60 * 60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
     twelve_hours = timedelta(hours = every_few_hours)   #12 hours in seconds
     for key in parts:
-        if parts[key].LastUpdated() is not None:
-            if datetime.time() - parts[key].LastUpdated() > twelve_hours or forced:
-                UpdatePart(key)
+        if parts[key].last_updated() is not None:
+            if datetime.time() - parts[key].last_updated() > twelve_hours or forced:
+                update_part(key)
                 #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
                 time.sleep(sleeptime) #updates different parts every hour
         else:
-            UpdatePart(key)
+            update_part(key)
             #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
             if not forced:
                 time.sleep(sleeptime)  # updates different p
 
 
-def UpdatePart(partname):
+def update_part(partname):
     global Parts
     part = Parts[partname]
-    data = GetJsonFromRequest(partname)
-    part.LoadToDatabase(data)
+    data = get_json_from_request(partname)
+    part.load_to_database(data)
 
-def EternalUpdating(every_few_hours = 12, sleeptime_seconds = 60*60):
+def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
     global Parts
     while True:
-        UpdateDatabase(Parts, False, every_few_hours, sleeptime_seconds)
+        update_database(Parts, False, every_few_hours, sleeptime_seconds)
 
 #def SendJsonToDatabase(json_data, database, ):
-def Initialize():
+def initialize():
     global Parts
-    Parts = GeneratePartsDefault()
+    Parts = generate_parts_default()
 
-Initialize()
-EternalUpdating()
+initialize()
+eternal_updating()
 # print("updating ssd")
-# UpdatePart("sdd")
+# update_part("sdd")
 # time.sleep(10)
 # print("updating ram")
-# UpdatePart("ram")
+# update_part("ram")
 # time.sleep(10)
 # print("updating hdd")
-# UpdatePart("hdd")
+# update_part("hdd")
 # time.sleep(10)
 # print("updating gpu")
-# UpdatePart("gpu")
+# update_part("gpu")
 # time.sleep(10)
 # print("updating case")
-# UpdatePart("case")
+# update_part("case")
 # time.sleep(10)
 # print("updating psu")
-# UpdatePart("psu")
+# update_part("psu")
 print("FINISHED")
 
 
