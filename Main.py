@@ -16,6 +16,8 @@ file = open("address.txt", "r")
 ADDRESS = file.readline()
 print(ADDRESS)
 Parts = {}
+mandatory_fields = []
+
 
 class Part:
     def __init__(self, name, collection, was_requested = False, last_requested = time.time()):
@@ -44,16 +46,45 @@ class Part:
         for stuff in stuffs:
             return stuff
 
+
 class PartType:
     def __init__(self, partname, dictionary, values_needed):
-
+        self.partname = partname
+        self.dictionary = dictionary
+        self.values_needed = values_needed
+    def filter_out(self, json_data):
+        obj = json.loads(json_data)
+        new_json = {}
+        try:
+            new_json['price'] = obj['price']['eu']
+        except:
+            return
+        try:
+            new_json['name'] = obj['name']
+        except:
+            return
+        try:
+            new_json['model'] = obj['model']
+        except:
+            return
+        try:
+            new_json['url'] = obj['url']
+        except:
+            return
+        for attribute in obj.attributes:
+            if attribute in self.dictionary:
+                new_json[self.dictionary[attribute]] = obj.attributes[attribute]
+        for value in self.values_needed:
+            if value not in new_json:
+                return False
+        return new_json
 
 def get_json_from_request(request_type):
     global ADDRESS
-    request = requests.get(ADDRESS+request_type) #gets request id from the server
+    request = requests.get(ADDRESS+request_type)  # gets request id from the server
     request_id = json.loads(request.content).get("result")
-    #print(request_id)
-    request = requests.get(ADDRESS + request_type +"/"+request_id)
+    # print(request_id)
+    request = requests.get(ADDRESS + request_type + "/" +request_id)
     while request.text == LOADING_MESSAGE:
         time.sleep(WAIT_TIME)
         request = requests.get(ADDRESS + request_type + "/" + request_id)
@@ -63,21 +94,31 @@ def get_json_from_request(request_type):
 
 def generate_parts_default():
     global client
-    parts = {}
-    parts['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
-    parts['motherboard'] = Part('motherboard', client.motherboard)
-    parts['cooler'] = Part('cooler', client.cooler)
-    parts['casecooler'] = Part('casecooler', client.casecooler)
-    parts['ram'] = Part('ram', client.Scrapper_Project.ram)
-    parts['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
-    parts['sdd'] = Part('sdd', client.Scrapper_Project.ssd)
-    parts['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
-    parts['case'] = Part('case', client.Scrapper_Project.case)
-    parts['psu'] = Part('psu', client.Scrapper_Project.psu)
-    parts['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
-    return parts
+    parts_l = {}
+    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
+    parts_l['motherboard'] = Part('motherboard', client.motherboard)
+    parts_l['cooler'] = Part('cooler', client.cooler)
+    parts_l['casecooler'] = Part('casecooler', client.casecooler)
+    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram)
+    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
+    parts_l['sdd'] = Part('sdd', client.Scrapper_Project.ssd)
+    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
+    parts_l['case'] = Part('case', client.Scrapper_Project.case)
+    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu)
+    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
+    return parts_l
 
-def update_database(parts, forced = False, every_few_hours = 12, sleeptime =60 * 60): # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
+
+def initialize_mandatory_fields():
+    global mandatory_fields
+    mandatory_fields.append("Price")
+    mandatory_fields.append("Name")
+    mandatory_fields.append("Model")
+    mandatory_fields.append("Units remaining")
+    return True
+
+
+def update_database(parts, forced = False, every_few_hours = 12, sleeptime =60 * 60):  # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
     twelve_hours = timedelta(hours = every_few_hours)   #12 hours in seconds
     for key in parts:
         if parts[key].last_updated() is not None:
