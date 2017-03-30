@@ -52,11 +52,16 @@ class PartType:
         self.partname = partname
         self.dictionary = dictionary
         self.values_needed = values_needed
+
     def filter_out(self, json_data):
         obj = json.loads(json_data)
         new_json = {}
         try:
             new_json['price'] = obj['price']['eu']
+        except:
+            return
+        try:
+            new_json['contents'] = obj['contents']
         except:
             return
         try:
@@ -71,13 +76,29 @@ class PartType:
             new_json['url'] = obj['url']
         except:
             return
-        for attribute in obj.attributes:
-            if attribute in self.dictionary:
-                new_json[self.dictionary[attribute]] = obj.attributes[attribute]
+        for attribute, value in obj.attributes:
+            if attribute in self.values_needed:
+                new_json[attribute] = value
         for value in self.values_needed:
             if value not in new_json:
                 return False
         return new_json
+
+
+def generate_parttypes():
+    #Ram part generating
+    part_types = {}
+    values_needed = []
+    values_needed.append("Atminties talpa")
+    values_needed.append("Atminties rūšis")
+    values_needed.append("Atminčių skaičius rinkinyje")
+    values_needed.append("Radiatorius")
+    values_needed.append("Atminties tipas")
+    values_needed.append("CAS Latency (CL) atidėjimas")
+    part_types['ram'] = PartType("ram", None, list(values_needed))
+
+
+    return part_types
 
 def get_json_from_request(request_type):
     global ADDRESS
