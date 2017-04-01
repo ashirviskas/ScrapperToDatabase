@@ -198,17 +198,17 @@ def get_json_from_request(request_type):
 def generate_parts_default():
     global client
     parts_l = {}
-    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client)
-    parts_l['motherboard'] = Part('motherboard', client.motherboard, client)
-    parts_l['cooler'] = Part('cooler', client.cooler, client)
-    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client)
-    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client)
-    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client)
-    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client)
-    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client)
-    parts_l['case'] = Part('case', client.Scrapper_Project.case, client)
-    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client)
-    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd, client)
+    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client.Scrapper_Project)
+    parts_l['motherboard'] = Part('motherboard', client.motherboard, client.Scrapper_Project)
+    parts_l['cooler'] = Part('cooler', client.cooler, client.Scrapper_Project)
+    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project)
+    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project)
+    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project)
+    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project)
+    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client.Scrapper_Project)
+    parts_l['case'] = Part('case', client.Scrapper_Project.case, client.Scrapper_Project)
+    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client.Scrapper_Project)
+    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd, client.Scrapper_Project)
     return parts_l
 
 def add_parttypes_to_parts(parts, parttypes):
