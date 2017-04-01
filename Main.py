@@ -10,7 +10,7 @@ from pymongo import MongoClient
 
 
 client = MongoClient('localhost', 27017)
-WAIT_TIME = 10 #time to wait for the worker on scrapper server to finish
+WAIT_TIME = 15 #time to wait for the worker on scrapper server to finish
 LOADING_MESSAGE = '"Loading"\n'
 file = open("address.txt", "r")
 ADDRESS = file.readline()
@@ -81,7 +81,7 @@ class PartType:
             new_json['url'] = obj['url']
         except:
             return
-        for attribute, value in obj.attributes:
+        for attribute, value in obj.items():
             if attribute in self.values_needed:
                 new_json[attribute] = value
         for value in self.values_needed:
@@ -258,8 +258,8 @@ def initialize():
     add_parttypes_to_parts(Parts, parttypes)
 
 initialize()
-update_part("ram")
-#eternal_updating()
+#update_part("ram")
+eternal_updating()
 # print("updating ssd")
 # update_part("ssd")
 # time.sleep(10)
