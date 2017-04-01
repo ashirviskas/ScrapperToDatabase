@@ -10,7 +10,7 @@ from pymongo import MongoClient
 
 
 client = MongoClient('localhost', 27017)
-WAIT_TIME = 2 #time to wait for the worker on scrapper server to finish
+WAIT_TIME = 10 #time to wait for the worker on scrapper server to finish
 LOADING_MESSAGE = '"Loading"\n'
 file = open("address.txt", "r")
 ADDRESS = file.readline()
@@ -200,7 +200,7 @@ def generate_parts_default():
     parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
     parts_l['motherboard'] = Part('motherboard', client.motherboard)
     parts_l['cooler'] = Part('cooler', client.cooler)
-    parts_l['casecooler'] = Part('casecooler', client.casecooler)
+    # parts_l['casecooler'] = Part('casecooler', client.casecooler)
     parts_l['ram'] = Part('ram', client.Scrapper_Project.ram)
     parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
     parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd)
@@ -211,7 +211,7 @@ def generate_parts_default():
     return parts_l
 
 def add_parttypes_to_parts(parts, parttypes):
-    for part in parts:
+    for key, part in parts.items():
         part.set_parttype(parttypes[part.name])
 
 
@@ -258,7 +258,8 @@ def initialize():
     add_parttypes_to_parts(Parts, parttypes)
 
 initialize()
-eternal_updating()
+update_part("ram")
+#eternal_updating()
 # print("updating ssd")
 # update_part("ssd")
 # time.sleep(10)
