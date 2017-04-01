@@ -20,11 +20,12 @@ mandatory_fields = []
 
 
 class Part:
-    def __init__(self, name, collection, was_requested = False, last_requested = time.time()):
+    def __init__(self, name, collection, was_requested = False, last_requested = time.time(), parttype = None):
         self.last_requested = last_requested
         self.name = name
         self.collection = collection
         self.was_requested = was_requested
+        self.parttype = parttype
 
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested)
@@ -33,6 +34,8 @@ class Part:
         result_del = ""
         result_ins = ""
         if data is not []:
+            for part in data:
+                part = self.parttype.filter_out(part)
             result_del = self.collection.delete_many({})
             result_ins = self.collection.insert(data, check_keys=False)
         print("deleted: ", result_del.deleted_count)
@@ -45,6 +48,8 @@ class Part:
         stuffs = self.collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
+    def set_parttype(self, parttype):
+        self.parttype = parttype
 
 
 class PartType:
@@ -53,8 +58,8 @@ class PartType:
         self.dictionary = dictionary
         self.values_needed = values_needed
 
-    def filter_out(self, json_data):
-        obj = json.loads(json_data)
+    def filter_out(self, obj):
+        # obj = json.loads(json_data)
         new_json = {}
         try:
             new_json['price'] = obj['price']['eu']
@@ -205,6 +210,10 @@ def generate_parts_default():
     parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
     return parts_l
 
+def add_parttypes_to_parts(parts, parttypes):
+    for part in parts:
+        part.set_parttype(parttypes[part.name])
+
 
 def initialize_mandatory_fields():
     global mandatory_fields
@@ -244,7 +253,9 @@ def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
 #def SendJsonToDatabase(json_data, database, ):
 def initialize():
     global Parts
+    parttypes = generate_parttypes()
     Parts = generate_parts_default()
+    add_parttypes_to_parts(Parts, parttypes)
 
 initialize()
 eternal_updating()
