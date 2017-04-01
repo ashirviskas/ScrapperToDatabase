@@ -86,7 +86,7 @@ class PartType:
 
 
 def generate_parttypes():
-    #Ram part generating
+    # Ram part generating
     part_types = {}
     values_needed = []
     values_needed.append("Atminties talpa")
@@ -96,7 +96,83 @@ def generate_parttypes():
     values_needed.append("Atminties tipas")
     values_needed.append("CAS Latency (CL) atidėjimas")
     part_types['ram'] = PartType("ram", None, list(values_needed))
-
+    # Psu part
+    values_needed.clear()
+    values_needed.append("Maitinimo šaltinio galia")
+    values_needed.append("Aukštis")
+    values_needed.append("Plotis")
+    values_needed.append("Formatas")
+    values_needed.append("Gylis")
+    values_needed.append("Maitinimo šaltinio standardas (ATX)")
+    values_needed.append("Maitinimo kištukų 6-pin (PCI-E) kiekis")
+    part_types["psu"] = PartType("psu", None, list(values_needed))
+    # Case part
+    values_needed.clear()
+    values_needed.append("Aukštis")
+    values_needed.append("Ilgis")
+    values_needed.append("Plotis")
+    values_needed.append("Įmontuotas maitinimo blokas(-ai)")
+    values_needed.append("Maitinimo šaltinio galia")
+    values_needed.append("Korpuso rūšis (pagrindinės plokštės tipas)")
+    values_needed.append("Midi Tower")
+    part_types["case"] = PartType("case", None, list(values_needed))
+    # Cooler part
+    values_needed.clear()
+    values_needed.append("Procesoriaus lizdo tipas")
+    values_needed.append("Radiatoriaus aukštis")
+    values_needed.append("Radiatoriaus plotis")
+    values_needed.append("Ventiliatoriaus plotis")
+    values_needed.append("Ventiliatoriaus aukštis")
+    values_needed.append("Ventiliatoriaus apsisukimų greitis")
+    values_needed.append("Ilgaamžiškumas")
+    part_types["cooler"] = PartType("cpu", None, list(values_needed))
+    # Cpu part
+    values_needed.clear()
+    values_needed.append("Procesoriaus branduolių skaičius")
+    values_needed.append("Procesoriaus tipas")
+    values_needed.append("Maksimalus TDP")
+    values_needed.append("Pridėtas ventiliatorius")
+    values_needed.append("Integruota grafinė sistema")
+    values_needed.append("Procesoriaus  taktavimo dažnis")
+    values_needed.append("Procesoriaus lizdo tipas")
+    values_needed.append("Procesoriaus tipas")
+    part_types["cpu"] = PartType("cpu", None, list(values_needed))
+    # dvd part
+    values_needed.clear()
+    values_needed.append("Plotis")
+    values_needed.append("Gylis")
+    values_needed.append("Aukštis")
+    values_needed.append("DVD±R, DVD±RW, DVD±R DL, DVD-RAM, DVD-ROM, DVD-ROM DL, DVD-Video")
+    part_types["dvd"] = PartType("dvd", None, list(values_needed))
+    # gpu part
+    values_needed.clear()
+    values_needed.append("Chipset tipas")
+    values_needed.append("Atminties magistralė")
+    values_needed.append("Atminties dažnis (efektyvus)")
+    values_needed.append("Instaliuota vaizdo atmintis")
+    values_needed.append("Aukštis")
+    values_needed.append("Chipset gamintojas")
+    part_types["gpu"] = PartType("gpu", None, list(values_needed))
+    # hdd part
+    values_needed.clear()
+    values_needed.append("HDD Capacity")
+    values_needed.append("Rotation speed")
+    values_needed.append("Form Factor")
+    part_types["hdd"] = PartType("hdd", None, list(values_needed))
+    # motherboard part
+    values_needed.clear()
+    values_needed.append("Chipset tipas")
+    values_needed.append("Maksimalus atminties dydis")
+    values_needed.append("Procesoriaus lizdo tipas")
+    part_types["motherboard"] = PartType("motherboard", None, list(values_needed))
+    # ssd part
+    values_needed.clear()
+    values_needed.append("Įrašymo greitis")
+    values_needed.append("Nuskaitymo greitis")
+    values_needed.append("Disko talpa")
+    values_needed.append("Plotis")
+    values_needed.append("Sąsaja")
+    part_types["ssd"] = PartType("ssd", None, list(values_needed))
 
     return part_types
 
