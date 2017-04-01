@@ -20,13 +20,13 @@ mandatory_fields = []
 
 
 class Part:
-    def __init__(self, name, collection, database = None, was_requested = False, last_requested = time.time(), parttype = None):
+    def __init__(self, name, collection, log_collection = None, was_requested = False, last_requested = time.time(), parttype = None):
         self.last_requested = last_requested
         self.name = name
         self.collection = collection
         self.was_requested = was_requested
         self.parttype = parttype
-        self.database = database
+        self.log_collection = log_collection
 
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested)
@@ -34,14 +34,17 @@ class Part:
     def load_to_database(self, data):
         result_del = ""
         result_ins = ""
+        data_filtered = []
         if data is not []:
             for part in data:
-                part = self.parttype.filter_out(part)
+                d = self.parttype.filter_out(part)
+                if d is not False:
+                    data_filtered.append(d)
             result_del = self.collection.delete_many({})
-            result_ins = self.collection.insert(data, check_keys=False)
+            result_ins = self.collection.insert(data_filtered, check_keys=False)
         print("deleted: ", result_del.deleted_count)
         print("inserted: ", len(result_ins))
-        self.database.log.insert_one({"name": self.name,
+        self.log_collection.insert_one({"name": self.name,
                                     "date": datetime.datetime.utcnow(),
                                     "deleted": result_del.deleted_count,
                                     "inserted": len(result_ins)})
@@ -65,24 +68,24 @@ class PartType:
         try:
             new_json['price'] = obj['price']['eu']
         except:
-            return
+            return False
         try:
             new_json['contents'] = obj['contents']
         except:
-            return
+            return False
         try:
             new_json['name'] = obj['name']
         except:
-            return
+            return False
         try:
             new_json['model'] = obj['model']
         except:
-            return
+            return False
         try:
             new_json['url'] = obj['url']
         except:
-            return
-        for attribute, value in obj.items():
+            return False
+        for attribute, value in obj['attributes'].items():
             if attribute in self.values_needed:
                 new_json[attribute] = value
         for value in self.values_needed:
@@ -148,7 +151,7 @@ def generate_parttypes():
     values_needed.append("Plotis")
     values_needed.append("Gylis")
     values_needed.append("Aukštis")
-    values_needed.append("DVD±R, DVD±RW, DVD±R DL, DVD-RAM, DVD-ROM, DVD-ROM DL, DVD-Video")
+    values_needed.append("Nuskaitomi diskų formatai (DVD)")
     part_types["dvd"] = PartType("dvd", None, list(values_needed))
     # gpu part
     values_needed.clear()
@@ -198,17 +201,17 @@ def get_json_from_request(request_type):
 def generate_parts_default():
     global client
     parts_l = {}
-    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client.Scrapper_Project)
-    parts_l['motherboard'] = Part('motherboard', client.motherboard, client.Scrapper_Project)
-    parts_l['cooler'] = Part('cooler', client.cooler, client.Scrapper_Project)
-    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project)
-    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project)
-    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project)
-    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project)
-    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client.Scrapper_Project)
-    parts_l['case'] = Part('case', client.Scrapper_Project.case, client.Scrapper_Project)
-    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client.Scrapper_Project)
-    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd, client.Scrapper_Project)
+    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client.Scrapper_Project.log)
+    parts_l['motherboard'] = Part('motherboard', client.motherboard, client.Scrapper_Project.log)
+    parts_l['cooler'] = Part('cooler', client.cooler, client.Scrapper_Project.log)
+    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project.log)
+    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project.log)
+    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project.log)
+    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
+    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client.Scrapper_Project.log)
+    parts_l['case'] = Part('case', client.Scrapper_Project.case, client.Scrapper_Project.log)
+    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client.Scrapper_Project.log)
+    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd, client.Scrapper_Project.log)
     return parts_l
 
 def add_parttypes_to_parts(parts, parttypes):
@@ -259,7 +262,8 @@ def initialize():
     add_parttypes_to_parts(Parts, parttypes)
 
 initialize()
-#update_part("ram")
+# update_part("ram")
+update_database(Parts, True, 12, 60)
 eternal_updating()
 # print("updating ssd")
 # update_part("ssd")
@@ -268,7 +272,7 @@ eternal_updating()
 # update_part("ram")
 # time.sleep(10)
 # print("updating hdd")
-# update_part("hdd")
+#update_part("dvd")
 # time.sleep(10)
 # print("updating gpu")
 # update_part("gpu")
