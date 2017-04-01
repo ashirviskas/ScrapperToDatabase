@@ -49,7 +49,7 @@ class Part:
                                     "deleted": result_del.deleted_count,
                                     "inserted": len(result_ins)})
     def last_updated(self):
-        stuffs = self.collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
+        stuffs = self.log_collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
     def set_parttype(self, parttype):
