@@ -7,6 +7,7 @@ import pprint
 import pymongo
 from datetime import timedelta
 from pymongo import MongoClient
+from dateutil.parser import parse
 
 
 client = MongoClient('localhost', 27017)
@@ -52,6 +53,7 @@ class Part:
         stuffs = self.log_collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
+        return None
     def set_parttype(self, parttype):
         self.parttype = parttype
 
@@ -232,7 +234,7 @@ def update_database(parts, forced = False, every_few_hours = 12, sleeptime =60 *
     twelve_hours = timedelta(hours = every_few_hours)   #12 hours in seconds
     for key in parts:
         if parts[key].last_updated() is not None:
-            if datetime.time() - parts[key].last_updated() > twelve_hours or forced:
+            if datetime.datetime.utcnow() - parts[key].last_updated()['date'] > twelve_hours or forced:
                 update_part(key)
                 #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
                 time.sleep(sleeptime) #updates different parts every hour
