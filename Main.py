@@ -20,12 +20,13 @@ mandatory_fields = []
 
 
 class Part:
-    def __init__(self, name, collection, was_requested = False, last_requested = time.time(), parttype = None):
+    def __init__(self, name, collection, database = None, was_requested = False, last_requested = time.time(), parttype = None):
         self.last_requested = last_requested
         self.name = name
         self.collection = collection
         self.was_requested = was_requested
         self.parttype = parttype
+        self.database = database
 
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested)
@@ -40,7 +41,7 @@ class Part:
             result_ins = self.collection.insert(data, check_keys=False)
         print("deleted: ", result_del.deleted_count)
         print("inserted: ", len(result_ins))
-        self.collection.insert_one({"name": self.name,
+        self.database.log.insert_one({"name": self.name,
                                     "date": datetime.datetime.utcnow(),
                                     "deleted": result_del.deleted_count,
                                     "inserted": len(result_ins)})
@@ -197,17 +198,17 @@ def get_json_from_request(request_type):
 def generate_parts_default():
     global client
     parts_l = {}
-    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu)
-    parts_l['motherboard'] = Part('motherboard', client.motherboard)
-    parts_l['cooler'] = Part('cooler', client.cooler)
-    # parts_l['casecooler'] = Part('casecooler', client.casecooler)
-    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram)
-    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd)
-    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd)
-    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu)
-    parts_l['case'] = Part('case', client.Scrapper_Project.case)
-    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu)
-    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd)
+    parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client)
+    parts_l['motherboard'] = Part('motherboard', client.motherboard, client)
+    parts_l['cooler'] = Part('cooler', client.cooler, client)
+    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client)
+    parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client)
+    parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client)
+    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client)
+    parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client)
+    parts_l['case'] = Part('case', client.Scrapper_Project.case, client)
+    parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client)
+    parts_l['dvd'] = Part('dvd', client.Scrapper_Project.dvd, client)
     return parts_l
 
 def add_parttypes_to_parts(parts, parttypes):
