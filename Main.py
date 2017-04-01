@@ -41,7 +41,10 @@ class Part:
                 d = self.parttype.filter_out(part)
                 if d is not False:
                     data_filtered.append(d)
-            result_del = self.collection.delete_many({})
+            if self.collection.find({}).size() > 0:
+                result_del = self.collection.delete_many({})
+            else:
+                result_del = 0
             result_ins = self.collection.insert(data_filtered, check_keys=False)
         print("deleted: ", result_del.deleted_count)
         print("inserted: ", len(result_ins))
