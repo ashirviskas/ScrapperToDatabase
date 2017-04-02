@@ -41,22 +41,25 @@ class Part:
                 d = self.parttype.filter_out(part)
                 if d is not False:
                     data_filtered.append(d)
-            if self.collection.find({}).count() > 0:
-                result_del = self.collection.delete_many({})
+            if self.collection.count() > 0:
+                result_del = self.collection.delete_many({}).deleted_count
             else:
                 result_del = 0
+                # result_del.deleted_count = 0
             result_ins = self.collection.insert(data_filtered, check_keys=False)
-        print("deleted: ", result_del.deleted_count)
+        print("deleted: ", 0)
         print("inserted: ", len(result_ins))
         self.log_collection.insert_one({"name": self.name,
                                     "date": datetime.datetime.utcnow(),
-                                    "deleted": result_del.deleted_count,
+                                    "deleted": result_del,
                                     "inserted": len(result_ins)})
+
     def last_updated(self):
         stuffs = self.log_collection.find({"name": self.name}, {'date': 1, "_id": False}).sort("date",-1).limit(1)
         for stuff in stuffs:
             return stuff
         return None
+
     def set_parttype(self, parttype):
         self.parttype = parttype
 
@@ -139,7 +142,7 @@ def generate_parttypes():
     values_needed.append("Ventiliatoriaus aukštis")
     values_needed.append("Ventiliatoriaus apsisukimų greitis")
     values_needed.append("Ilgaamžiškumas")
-    part_types["cooler"] = PartType("cpu", None, list(values_needed))
+    part_types["cooler"] = PartType("cooler", None, list(values_needed))
     # Cpu part
     values_needed.clear()
     values_needed.append("Procesoriaus branduolių skaičius")
@@ -207,9 +210,9 @@ def generate_parts_default():
     global client
     parts_l = {}
     parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client.Scrapper_Project.log)
-    parts_l['motherboard'] = Part('motherboard', client.motherboard, client.Scrapper_Project.log)
-    parts_l['cooler'] = Part('cooler', client.cooler, client.Scrapper_Project.log)
-    # parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project.log)
+    parts_l['motherboard'] = Part('motherboard', client.Scrapper_Project.motherboard, client.Scrapper_Project.log)
+    parts_l['cooler'] = Part('cooler', client.Scrapper_Project.cooler, client.Scrapper_Project.log)
+    #parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project.log)
     parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project.log)
     parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project.log)
     parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
