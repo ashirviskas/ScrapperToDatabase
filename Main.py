@@ -41,7 +41,7 @@ class Part:
                 d = self.parttype.filter_out(part)
                 if d is not False:
                     data_filtered.append(d)
-            if self.collection.find({}).size() > 0:
+            if self.collection.find({}).count() > 0:
                 result_del = self.collection.delete_many({})
             else:
                 result_del = 0
