@@ -9,15 +9,14 @@ from datetime import timedelta
 from pymongo import MongoClient
 from dateutil.parser import parse
 
-
-client = MongoClient('localhost', 27017)
+uri = open("database.txt", "r").readline()
+client = MongoClient(uri)
 WAIT_TIME = 15 #time to wait for the worker on scrapper server to finish
 LOADING_MESSAGE = '"Loading"\n'
 file = open("address.txt", "r")
 ADDRESS = file.readline()
 print(ADDRESS)
 Parts = {}
-mandatory_fields = []
 
 
 class Part:
@@ -36,17 +35,22 @@ class Part:
         result_del = ""
         result_ins = ""
         data_filtered = []
-        if data is not []:
-            for part in data:
-                d = self.parttype.filter_out(part)
-                if d is not False:
-                    data_filtered.append(d)
-            if self.collection.count() > 0:
-                result_del = self.collection.delete_many({}).deleted_count
-            else:
-                result_del = 0
-                # result_del.deleted_count = 0
-            result_ins = self.collection.insert(data_filtered, check_keys=False)
+        if is_database_online():
+            if data is not [] or data is not False:
+                for part in data:
+                    d = self.parttype.filter_out(part)
+                    if d is not False:
+                        data_filtered.append(d)
+                if self.collection.count() > 0:
+                    result_del = self.collection.delete_many({}).deleted_count
+                else:
+                    result_del = 0
+                    # result_del.deleted_count = 0
+                result_ins = self.collection.insert(data_filtered, check_keys=False)
+        else:
+            announce_an_error("Loading to database unsuccessful, nothing loaded")
+            return
+        print("Part: ", self.name)
         print("deleted: ", 0)
         print("inserted: ", len(result_ins))
         self.log_collection.insert_one({"name": self.name,
@@ -131,7 +135,7 @@ def generate_parttypes():
     values_needed.append("Įmontuotas maitinimo blokas(-ai)")
     values_needed.append("Maitinimo šaltinio galia")
     values_needed.append("Korpuso rūšis (pagrindinės plokštės tipas)")
-    values_needed.append("Midi Tower")
+    values_needed.append("Korpuso tipas")
     part_types["case"] = PartType("case", None, list(values_needed))
     # Cooler part
     values_needed.clear()
@@ -190,13 +194,17 @@ def generate_parttypes():
     values_needed.append("Plotis")
     values_needed.append("Sąsaja")
     part_types["ssd"] = PartType("ssd", None, list(values_needed))
-
     return part_types
+
 
 def get_json_from_request(request_type):
     global ADDRESS
     request = requests.get(ADDRESS+request_type)  # gets request id from the server
-    request_id = json.loads(request.content).get("result")
+    try:
+        request_id = json.loads(request.content).get("result")
+    except:
+        announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
+        return False
     # print(request_id)
     request = requests.get(ADDRESS + request_type + "/" +request_id)
     while request.text == LOADING_MESSAGE:
@@ -204,6 +212,16 @@ def get_json_from_request(request_type):
         request = requests.get(ADDRESS + request_type + "/" + request_id)
     data = json.loads(request.content)
     return data
+
+
+def is_database_online():
+    global client
+    try:
+        client.server_info()
+    except:
+        announce_an_error("PyMongo server is offline or not accessible")
+        return False
+    return True
 
 
 def generate_parts_default():
@@ -215,7 +233,7 @@ def generate_parts_default():
     #parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project.log)
     parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project.log)
     parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project.log)
-    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
+    #parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
     parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client.Scrapper_Project.log)
     parts_l['case'] = Part('case', client.Scrapper_Project.case, client.Scrapper_Project.log)
     parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client.Scrapper_Project.log)
@@ -227,42 +245,41 @@ def add_parttypes_to_parts(parts, parttypes):
         part.set_parttype(parttypes[part.name])
 
 
-def initialize_mandatory_fields():
-    global mandatory_fields
-    mandatory_fields.append("Price")
-    mandatory_fields.append("Name")
-    mandatory_fields.append("Model")
-    mandatory_fields.append("Units remaining")
-    return True
-
-
-def update_database(parts, forced = False, every_few_hours = 12, sleeptime =60 * 60):  # parts dictionary, forced - is forced, sleeptime - time to sleep, so won't ddos skytech
+def update_database(forced=False, every_few_hours=12, sleeptime=60 * 60):  # parts dictionary, forced - is forced,
+    # sleeptime - time to sleep between parts, so won't ddos skytech
     twelve_hours = timedelta(hours = every_few_hours)   #12 hours in seconds
-    for key in parts:
-        if parts[key].last_updated() is not None:
-            if datetime.datetime.utcnow() - parts[key].last_updated()['date'] > twelve_hours or forced:
+    for key in Parts:
+        if Parts[key].last_updated() is not None: # if part was recently updated
+            if datetime.datetime.utcnow() - Parts[key].last_updated()['date'] > twelve_hours or forced: # if updated more than twelve hours ago or forced
                 update_part(key)
-                #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
-                time.sleep(sleeptime) #updates different parts every hour
+                time.sleep(sleeptime)
         else:
             update_part(key)
-            #parts[key].LoadToDatabase(GetJsonFromRequest(parts[key].name))
             if not forced:
-                time.sleep(sleeptime)  # updates different p
+                time.sleep(sleeptime)  # updates d
 
 
 def update_part(partname):
     global Parts
-    part = Parts[partname]
+    try:
+        part = Parts[partname]
+    except KeyError:
+        announce_an_error("Error, no such partname in Parts: " + partname)
+        return
     data = get_json_from_request(partname)
-    part.load_to_database(data)
+    if data is not False:
+        part.load_to_database(data)
+
+
+def announce_an_error(error_mes):
+    print(error_mes)
 
 def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
     global Parts
     while True:
-        update_database(Parts, False, every_few_hours, sleeptime_seconds)
+        update_database(False, every_few_hours, sleeptime_seconds)
 
-#def SendJsonToDatabase(json_data, database, ):
+
 def initialize():
     global Parts
     parttypes = generate_parttypes()
@@ -270,8 +287,7 @@ def initialize():
     add_parttypes_to_parts(Parts, parttypes)
 
 initialize()
-# update_part("ram")
-update_database(Parts, True, 12, 60)
+update_database(True, 12, 60)
 eternal_updating()
 # print("updating ssd")
 # update_part("ssd")
@@ -291,23 +307,3 @@ eternal_updating()
 # print("updating psu")
 # update_part("psu")
 print("FINISHED")
-
-
-
-### TESTING FOLLOWS: ###
-# file = open("data_dvd_testing", "r", encoding="utf8") #
-# json_data = json.loads(file.read())
-# Parts['dvd'].LoadToDatabase(json_data)
-# pprint.pprint(Parts['dvd'].LastUpdated())
-# """for dvd in client.dvd.data.find():
-#     pprint.pprint(dvd)"""
-# pprint.pprint(client.dvd.data.find({"contents":"5"}))
-"""test_obj = {"sky_id": "1254",
-            "part_name": "A decent cpu",
-            "hardware_stuffs": ["LGA1151", "test"],
-            "Speed": "3.4GHz",
-            "date": datetime.datetime.utcnow()}
-print(result.inserted_id)
-pprint.pprint(cpus.find_one({"sky_id": "1254"}))
-"""
-###TESTING END###
