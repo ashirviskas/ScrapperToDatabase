@@ -273,6 +273,7 @@ def update_database(forced=False, every_few_hours=12, sleeptime=60 * 60):  # par
 
 
 def update_part(partname):
+    print("Attempting to update ", partname)
     global Parts
     try:
         part = Parts[partname]
@@ -290,6 +291,12 @@ def announce_an_error(error_mes):
     LOG_COL.insert_one({"Error": error_mes,
                                     "date": datetime.datetime.utcnow()})
 
+def message_to_log(message):
+    global LOG_COL
+    print(message)
+    LOG_COL.insert_one({"Message": message,
+                        "date":datetime.datetime.utcnow()})
+
 def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
     global Parts
     while True:
@@ -297,6 +304,7 @@ def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
 
 
 def initialize():
+    message_to_log("Started working")
     global Parts
     parttypes = generate_parttypes()
     Parts = generate_parts_default()
