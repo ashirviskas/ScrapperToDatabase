@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import json
 import time
@@ -9,7 +9,6 @@ import pprint
 import pymongo
 from datetime import timedelta
 from pymongo import MongoClient
-from dateutil.parser import parse
 
 uri = open("database.txt", "r").readline()
 client = MongoClient(uri)
