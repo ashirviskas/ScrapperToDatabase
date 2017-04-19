@@ -12,6 +12,7 @@ from dateutil.parser import parse
 
 uri = open("database.txt", "r").readline()
 client = MongoClient(uri)
+LOG_COL = client.Scrapper_Project.log
 WAIT_TIME = 15 #time to wait for the worker on scrapper server to finish
 LOADING_MESSAGE = '"Loading"\n'
 file = open("address.txt", "r")
@@ -284,7 +285,10 @@ def update_part(partname):
 
 
 def announce_an_error(error_mes):
+    global LOG_COL
     print(error_mes)
+    LOG_COL.insert_one({"Error": error_mes,
+                                    "date": datetime.datetime.utcnow()})
 
 def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
     global Parts
