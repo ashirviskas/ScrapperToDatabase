@@ -214,7 +214,7 @@ def get_json_from_request(request_type):
     request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
     #try:
     print(request.content)
-    request_id = json.loads(request.content).get("result")
+    request_id = json.loads(request.content.decode("utf-8")).get("result")
     #except:
     #    announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
     #    return False
@@ -223,7 +223,7 @@ def get_json_from_request(request_type):
     while request.text == LOADING_MESSAGE:
         time.sleep(WAIT_TIME)
         request = requests.get(ADDRESS + request_type + "/" + request_id)
-    data = json.loads(request.content)
+    data = json.loads(request.content.decode('utf-8'))
     return data
 
 
