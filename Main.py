@@ -194,6 +194,17 @@ def generate_parttypes():
     values_needed.append("Plotis")
     values_needed.append("Sąsaja")
     part_types["ssd"] = PartType("ssd", None, list(values_needed))
+    # casecooler part
+    values_needed.clear()
+    values_needed.append("Ilgaamžiškumas")
+    values_needed.append("Ventiliatoriaus apsisukimų greitis")
+    values_needed.append("Aukštis")
+    values_needed.append("Plotis")
+    values_needed.append("Storis")
+    values_needed.append("Oro srautas")
+    values_needed.append("Akustinis triukšmas")
+    values_needed.append("Maitinimo jungties tipas")
+    part_types["casecooler"] = PartType("casecooler", None, list(values_needed))
     return part_types
 
 
@@ -230,10 +241,10 @@ def generate_parts_default():
     parts_l['cpu'] = Part('cpu', client.Scrapper_Project.cpu, client.Scrapper_Project.log)
     parts_l['motherboard'] = Part('motherboard', client.Scrapper_Project.motherboard, client.Scrapper_Project.log)
     parts_l['cooler'] = Part('cooler', client.Scrapper_Project.cooler, client.Scrapper_Project.log)
-    #parts_l['casecooler'] = Part('casecooler', client.casecooler, client.Scrapper_Project.log)
+    parts_l['casecooler'] = Part('casecooler', client.Scrapper_Project.casecooler, client.Scrapper_Project.log)
     parts_l['ram'] = Part('ram', client.Scrapper_Project.ram, client.Scrapper_Project.log)
     parts_l['hdd'] = Part('hdd', client.Scrapper_Project.hdd, client.Scrapper_Project.log)
-    #parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
+    parts_l['ssd'] = Part('ssd', client.Scrapper_Project.ssd, client.Scrapper_Project.log)
     parts_l['gpu'] = Part('gpu', client.Scrapper_Project.gpu, client.Scrapper_Project.log)
     parts_l['case'] = Part('case', client.Scrapper_Project.case, client.Scrapper_Project.log)
     parts_l['psu'] = Part('psu', client.Scrapper_Project.psu, client.Scrapper_Project.log)
@@ -288,7 +299,7 @@ def initialize():
 
 initialize()
 update_database(True, 12, 60)
-eternal_updating()
+#eternal_updating()
 # print("updating ssd")
 # update_part("ssd")
 # time.sleep(10)
