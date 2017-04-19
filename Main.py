@@ -223,7 +223,7 @@ def get_json_from_request(request_type):
     while request.text == LOADING_MESSAGE:
         time.sleep(WAIT_TIME)
         request = requests.get(ADDRESS + request_type + "/" + request_id)
-    data = json.loads(request.content)
+    data = json.loads(str(request.content))
     return data
 
 
