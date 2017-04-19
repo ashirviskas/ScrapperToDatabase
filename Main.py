@@ -211,7 +211,7 @@ def generate_parttypes():
 
 def get_json_from_request(request_type):
     global ADDRESS
-    request = requests.get(ADDRESS+request_type)  # gets request id from the server
+    request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
     #try:
     print(request.content)
     request_id = json.loads(request.content).get("result")
