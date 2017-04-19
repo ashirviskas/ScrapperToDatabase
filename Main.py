@@ -213,7 +213,7 @@ def get_json_from_request(request_type):
     global ADDRESS
     request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
     #try:
-    print(request.content)
+    print(request.content.decode("utf-8"))
     request_id = json.loads(request.content.decode("utf-8")).get("result")
     #except:
     #    announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
