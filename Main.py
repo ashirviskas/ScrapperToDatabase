@@ -212,12 +212,12 @@ def generate_parttypes():
 def get_json_from_request(request_type):
     global ADDRESS
     request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
-    #try:
+    try:
     #print(request.content.decode("utf-8"))
-    request_id = request.json().get("result")
-    #except:
-    #    announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
-    #    return False
+        request_id = request.json().get("result")
+    except:
+        announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
+        return False
     # print(request_id)
     request = requests.get(str(ADDRESS + request_type + "/" +request_id).replace('\n', ''))
     while request.text == LOADING_MESSAGE:
