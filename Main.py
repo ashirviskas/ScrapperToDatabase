@@ -1,12 +1,10 @@
 #!/usr/bin/python3
 # encoding=utf-8
-import json
 import time
 import requests
-import os
 import datetime
-import pprint
-import pymongo
+import re
+import json
 from datetime import timedelta
 from pymongo import MongoClient
 
@@ -19,16 +17,78 @@ file = open("address.txt", "r")
 ADDRESS = file.readline()
 print(ADDRESS)
 Parts = {}
+testing = True
+from_file = False
+
+
+class NormaliseType:
+    def __init__(self, doubles=None, integers=None, bools=None, replaces = None):
+        if doubles is None:
+            self.doubles = []
+        self.doubles = doubles
+        if integers is None:
+            self.integers = []
+        self.integers = integers
+        if bools is None:
+            self.bools = []
+        self.bools = bools
+        if replaces is None:
+            self.replaces = []
+        self.replaces = replaces
+
+    def normalise_json(self, json):
+        if self.replaces:
+            for replace in self.replaces:
+                json[replace[0]] = json[replace[0]].replace(replace[1], replace[2])
+        if self.doubles:
+            for double in self.doubles:
+                try:
+                    json[double] = float(json[double].replace(',','.'))
+                except ValueError:
+                    print('Value error, \"', json[double], '\" is not double in ', double)
+                    json[double] = -1
+                except:
+                    json[double] = -1
+                    print("Err ", double, " Json: ", json[double])
+        if self.integers:
+            for integer in self.integers:
+                try:
+                    json[integer] = int(json[integer])
+                except ValueError:
+                    print('Value error, \"', json[integer], '\" is not integer in ', integer)
+                    json[integer] = -1
+                except:
+                    json[integer] = -1
+        if self.bools:
+            for booley in self.bools:
+                try:
+                    bool_str = json[booley].lower()
+                except:
+                    continue
+                if bool_str == "taip" or bool_str == "yes":
+                    json[booley] = True
+                    continue
+                elif bool_str == "ne" or bool_str == "no":
+                    json[booley] = False
+                else:
+                    json[booley] = None
+        contents = json['contents'].replace('5+', '6')
+        try:
+            json['contents'] = int(contents)
+        except:
+            json['contents'] = 0
+        return json
 
 
 class Part:
-    def __init__(self, name, collection, log_collection = None, was_requested = False, last_requested = time.time(), parttype = None):
+    def __init__(self, name, collection, log_collection = None, was_requested = False, last_requested = time.time(), parttype = None, normalisetype = None):
         self.last_requested = last_requested
         self.name = name
         self.collection = collection
         self.was_requested = was_requested
         self.parttype = parttype
         self.log_collection = log_collection
+        self.normalisetype = normalisetype
 
     def __str__(self):
         return str(self.name, " Last requested: ", self.last_requested)
@@ -41,7 +101,8 @@ class Part:
             if data is not [] or data is not False:
                 for part in data:
                     d = self.parttype.filter_out(part)
-                    if d is not False:
+                    if d is not False and not None:
+                        d = self.normalisetype.normalise_json(d)
                         data_filtered.append(d)
                 if self.collection.count() > 0:
                     result_del = self.collection.delete_many({}).deleted_count
@@ -53,7 +114,7 @@ class Part:
             announce_an_error("Loading to database unsuccessful, nothing loaded")
             return
         print("Part: ", self.name)
-        print("deleted: ", 0)
+        print("deleted: ", result_del)
         print("inserted: ", len(result_ins))
         self.log_collection.insert_one({"name": self.name,
                                     "date": datetime.datetime.utcnow(),
@@ -178,15 +239,20 @@ def generate_parttypes():
     part_types["gpu"] = PartType("gpu", None, list(values_needed))
     # hdd part
     values_needed.clear()
-    values_needed.append("HDD Capacity")
-    values_needed.append("Rotation speed")
-    values_needed.append("Form Factor")
+    values_needed.append("Disko talpa")
+    values_needed.append("Sąsaja")
+    values_needed.append("Aukštis")
+    values_needed.append("Ilgis")
+    values_needed.append("Plotis")
+    values_needed.append("Rotacinis greitis")
+    values_needed.append("Neto svoris")
     part_types["hdd"] = PartType("hdd", None, list(values_needed))
     # motherboard part
     values_needed.clear()
     values_needed.append("Chipset tipas")
     values_needed.append("Maksimalus atminties dydis")
     values_needed.append("Procesoriaus lizdo tipas")
+    values_needed.append("Atminties rūšis")
     part_types["motherboard"] = PartType("motherboard", None, list(values_needed))
     # ssd part
     values_needed.clear()
@@ -212,19 +278,23 @@ def generate_parttypes():
 
 def get_json_from_request(request_type):
     global ADDRESS
-    request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
-    try:
-    #print(request.content.decode("utf-8"))
-        request_id = request.json().get("result")
-    except:
-        announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
-        return False
-    # print(request_id)
-    request = requests.get(str(ADDRESS + request_type + "/" +request_id).replace('\n', ''))
-    while request.text == LOADING_MESSAGE:
-        time.sleep(WAIT_TIME)
-        request = requests.get(str(ADDRESS + request_type + "/" + request_id).replace('\n', ''))
-    data = request.json()
+    global from_file
+    if not from_file:
+        request = requests.get(str(ADDRESS+request_type).replace('\n', ''))  # gets request id from the server
+        try:
+        #print(request.content.decode("utf-8"))
+            request_id = request.json().get("result")
+        except:
+            announce_an_error("Cannot decode JSON of: " + ADDRESS+request_type)
+            return False
+        # print(request_id)
+        request = requests.get(str(ADDRESS + request_type + "/" +request_id).replace('\n', ''))
+        while request.text == LOADING_MESSAGE:
+            time.sleep(WAIT_TIME)
+            request = requests.get(str(ADDRESS + request_type + "/" + request_id).replace('\n', ''))
+        data = request.json()
+    else:
+        data = json.loads(open("data_" + request_type + "_testing.html", encoding="utf8").read())
     return data
 
 
@@ -286,17 +356,70 @@ def update_part(partname):
         part.load_to_database(data)
 
 
+def add_normalisetypes_to_parts():
+    global Parts
+    doubles = ['Maitinimo šaltinio standardas (ATX)']
+    integers = ['Aukštis', 'Plotis', 'Gylis', 'Maitinimo šaltinio galia', 'Maitinimo kištukų 6-pin (PCI-E) kiekis']
+    Parts['psu'].normalisetype = NormaliseType(list(doubles), list(integers))
+    doubles = []
+    integers = ['Aukštis', 'Ilgis', 'Maitinimo šaltinio galia']
+    Parts['case'].normalisetype = NormaliseType(list(doubles), list(integers))
+    integers = ['Maksimalus atminties dydis']
+    Parts['motherboard'].normalisetype = NormaliseType([], list(integers))
+    doubles = ['Procesoriaus  taktavimo dažnis']
+    integers = ['Procesoriaus branduolių skaičius', 'Maksimalus TDP']
+    bools = ['Pridėtas ventiliatorius','Integruota grafinė sistema']
+    Parts['cpu'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools))
+    doubles = ['Aukštis', 'Gylis', 'Plotis']
+    integers = []
+    bools = []
+    Parts['dvd'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools))
+    doubles = ['Ventiliatoriaus aukštis', 'Ventiliatoriaus plotis', 'Radiatoriaus plotis', 'Radiatoriaus aukštis']
+    integers = ['Ilgaamžiškumas']
+    bools = []
+    Parts['cooler'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools))
+    doubles = ['Aukštis']
+    integers = ['Atminties dažnis (efektyvus)', 'Instaliuota vaizdo atmintis', 'Atminties magistralė']
+    bools = []
+    replaces = []
+    replaces.append(('Atminties magistralė', '-bit', ''))
+    replaces.append(('Atminties magistralė', 's', ''))
+    Parts['gpu'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools), list(replaces))
+    doubles = ['Aukštis', 'Storis', 'Plotis']
+    integers = ['Ilgaamžiškumas']
+    bools = []
+    replaces = []
+    Parts['casecooler'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools), list(replaces))
+    doubles = []
+    integers = ['Atminties talpa', 'Atminčių skaičius rinkinyje']
+    bools = ['Radiatorius']
+    replaces = []
+    Parts['ram'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools), list(replaces))
+    doubles = ['Plotis']
+    integers = ['Nuskaitymo greitis', 'Įrašymo greitis', 'Disko talpa']
+    bools = []
+    replaces = []
+    Parts['ssd'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools), list(replaces))
+    doubles = ['Neto svoris', 'Plotis', 'Aukštis', 'Ilgis']
+    integers = ['Disko talpa']
+    bools = []
+    replaces = []
+    Parts['hdd'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools), list(replaces))
+
+
 def announce_an_error(error_mes):
     global LOG_COL
     print(error_mes)
     LOG_COL.insert_one({"Error": error_mes,
                                     "date": datetime.datetime.utcnow()})
 
+
 def message_to_log(message):
     global LOG_COL
     print(message)
     LOG_COL.insert_one({"Message": message,
                         "date":datetime.datetime.utcnow()})
+
 
 def eternal_updating(every_few_hours = 12, sleeptime_seconds =60 * 60):
     global Parts
@@ -310,12 +433,16 @@ def initialize():
     parttypes = generate_parttypes()
     Parts = generate_parts_default()
     add_parttypes_to_parts(Parts, parttypes)
+    add_normalisetypes_to_parts()
 
 initialize()
 update_database(True, 12, 60)
 #eternal_updating()
 # print("updating ssd")
-# update_part("ssd")
+# doubles = ['Maitinimo šaltinio standardas (ATX)']
+# integers = ['Aukštis', 'Plotis', 'Gylis', 'Maitinimo šaltinio galia', 'Maitinimo kištukų 6-pin (PCI-E) kiekis']
+# Parts['psu'].normalisetype = NormaliseType(doubles, integers)
+# update_part("psu")
 # time.sleep(10)
 # print("updating ram")
 #update_part("hdd")
