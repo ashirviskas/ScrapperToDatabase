@@ -358,8 +358,8 @@ def update_part(partname):
 
 def add_normalisetypes_to_parts():
     global Parts
-    doubles = ['Maitinimo šaltinio standardas (ATX)']
-    integers = ['Aukštis', 'Plotis', 'Gylis', 'Maitinimo šaltinio galia', 'Maitinimo kištukų 6-pin (PCI-E) kiekis']
+    doubles = ['Maitinimo šaltinio standardas (ATX)', 'Aukštis', 'Plotis', 'Gylis']
+    integers = ['Maitinimo šaltinio galia', 'Maitinimo kištukų 6-pin (PCI-E) kiekis']
     Parts['psu'].normalisetype = NormaliseType(list(doubles), list(integers))
     doubles = []
     integers = ['Aukštis', 'Ilgis', 'Maitinimo šaltinio galia']
