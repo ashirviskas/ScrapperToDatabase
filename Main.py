@@ -80,7 +80,7 @@ class PartType:
         # obj = json.loads(json_data)
         new_json = {}
         try:
-            new_json['price'] = obj['price']['eu']
+            new_json['price'] = float(obj['price']['eu'][:-1])
         except:
             return False
         try:
@@ -318,7 +318,7 @@ update_database(True, 12, 60)
 # update_part("ssd")
 # time.sleep(10)
 # print("updating ram")
-# update_part("ram")
+#update_part("hdd")
 # time.sleep(10)
 # print("updating hdd")
 #update_part("dvd")
