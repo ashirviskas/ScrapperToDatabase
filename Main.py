@@ -361,9 +361,10 @@ def add_normalisetypes_to_parts():
     doubles = ['Maitinimo šaltinio standardas (ATX)', 'Aukštis', 'Plotis', 'Gylis']
     integers = ['Maitinimo šaltinio galia', 'Maitinimo kištukų 6-pin (PCI-E) kiekis']
     Parts['psu'].normalisetype = NormaliseType(list(doubles), list(integers))
-    doubles = ['Aukštis', 'Ilgis']
+    doubles = ['Aukštis', 'Ilgis', 'Plotis']
     integers = ['Maitinimo šaltinio galia']
-    Parts['case'].normalisetype = NormaliseType(list(doubles), list(integers))
+    bools = ['Įmontuotas maitinimo blokas(-ai)']
+    Parts['case'].normalisetype = NormaliseType(list(doubles), list(integers), list(bools))
     integers = ['Maksimalus atminties dydis']
     Parts['motherboard'].normalisetype = NormaliseType([], list(integers))
     doubles = ['Procesoriaus  taktavimo dažnis']
